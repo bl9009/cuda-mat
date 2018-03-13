@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "src/matrix.h"
+#include "src/matrix.cuh"
 
 int main()
 {

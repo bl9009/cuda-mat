@@ -21,6 +21,14 @@ namespace cudamat
 
 namespace cudamat
 {
+    class Matrix;
+
+    __global__
+    void computeCell(const Matrix& A, const Matrix& B, size_t i, size_t j, size_t m, Matrix& C);
+}
+
+namespace cudamat
+{
     class Matrix
     {
         public:
@@ -40,11 +48,11 @@ namespace cudamat
             {
                 MatrixData data;
 
-                for (int i = 0; i < rows; ++i)
+                for (size_t i = 0; i < rows; ++i)
                 {
                     MatrixRow row;
 
-                    for (int j = 0; j < cols; ++j)
+                    for (size_t j = 0; j < cols; ++j)
                     {
                         row.push_back(0.0);
                     }
@@ -78,12 +86,12 @@ namespace cudamat
         public:
             Matrix mult(const Matrix& B) const
             {
-                Matrix A = *this;
+                const Matrix A = *this;
 
-                size_t m = A.shape().cols;
-                size_t n = A.shape().rows;
-                size_t p = B.shape().cols;
-                size_t q = B.shape().rows;
+                const size_t m = A.shape().cols;
+                const size_t n = A.shape().rows;
+                const size_t p = B.shape().cols;
+                const size_t q = B.shape().rows;
 
                 if (m != q)
                 {
@@ -92,18 +100,21 @@ namespace cudamat
 
                 Matrix C = Matrix::zeros(n, p);
 
-                for (int i = 0; i < n; ++i)
+                for (size_t i = 0; i < n; ++i)
                 {
-                    for (int j = 0; j < p; ++j)
+                    for (size_t j = 0; j < p; ++j)
                     {
-                        double sum = 0;
+                        // double sum = 0;
 
-                        for (int k = 0; k < m; ++k)
-                        {
-                            sum += A[i][k] * B[k][j];
-                        }
+                        // for (int k = 0; k < m; ++k)
+                        // {
+                        //     sum += A[i][k] * B[k][j];
+                        // }
 
-                        C[i][j] = sum;
+                        // C[i][j] = sum;
+
+                        //C[i][j] = computeCell(A, B, i, j, m);
+                        computeCell<<<1,1>>>(A, B, i, j, m, C);
                     }
                 }
 
@@ -159,4 +170,20 @@ namespace cudamat
 
             MatrixShape _shape;
     };
+}
+
+namespace cudamat
+{
+    __global__
+    void computeCell(const Matrix& A, const Matrix& B, size_t i, size_t j, size_t m, Matrix& C)
+    {
+        double result = 0.0;
+
+        for (size_t k = 0; k < m; ++k)
+        {
+            result += A[i][k] * B[k][j];
+        }
+
+        C[i][j] = result;
+    }
 }
