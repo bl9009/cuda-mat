@@ -35,12 +35,10 @@ matrix_t zeros(unsigned m, unsigned n)
 {
     matrix_t mat = { alloc_grid(m), m, n };
 
-    for (unsigned i = 0; i < m; ++i)
-    {
+    for (unsigned i = 0; i < m; ++i) {
         mat.data[i] = alloc_row(n);
 
-        for (unsigned j = 0; j < n; ++j)
-        {
+        for (unsigned j = 0; j < n; ++j) {
             mat.data[i][j] = 0.0;
         }
     }
@@ -52,12 +50,10 @@ matrix_t from_seq(double* seq, unsigned m, unsigned n)
 {
     matrix_t mat = { alloc_grid(m), m, n };
 
-    for (unsigned i = 0; i < m; ++i)
-    {
+    for (unsigned i = 0; i < m; ++i) {
         mat.data[i] = alloc_row(n);
 
-        for (unsigned j = 0; j < n; ++j)
-        {
+        for (unsigned j = 0; j < n; ++j) {
             mat.data[i][j] = *seq;
             ++seq;
         }
@@ -73,8 +69,7 @@ void compute_cell(matrix_t A, matrix_t B, matrix_t C, unsigned i, unsigned j)
 {
     double sum = 0.0;
 
-    for (int k = 0; k < A.n; ++k)
-    {
+    for (int k = 0; k < A.n; ++k) {
         sum += A.data[i][k] * B.data[k][j];
     }
 
@@ -93,10 +88,8 @@ matrix_t mult(matrix_t A, matrix_t B)
 
     matrix_t C = zeros(A.m, B.n);
 
-    for (unsigned i = 0; i < C.m; ++i)
-    {
-        for (unsigned j = 0; j < C.n; ++j)
-        {
+    for (unsigned i = 0; i < C.m; ++i) {
+        for (unsigned j = 0; j < C.n; ++j) {
 #ifdef __CUDACC__
             compute_cell<<<1,1>>>(A, B, C, i, j);
 #else
@@ -134,8 +127,7 @@ void mult2_kernel(matrix_t A, matrix_t B, matrix_t& C, int& result)
 
     double sum = 0.0;
 
-    for (int k = 0; k < A.n; ++k)
-    {
+    for (int k = 0; k < A.n; ++k) {
         sum += A.data[i][k] * B.data[k][j];
     }
 
@@ -146,8 +138,7 @@ void mult2_kernel(matrix_t A, matrix_t B, matrix_t& C, int& result)
 
 matrix_t mult2(matrix_t A, matrix_t B)
 {
-    if (A.n != B.m)
-    {
+    if (A.n != B.m) {
         matrix_t tmp = { 0, 0, 0 };
         return tmp;
     }
@@ -159,13 +150,11 @@ matrix_t mult2(matrix_t A, matrix_t B)
 
     cudaDeviceSynchronize();
 
-    if (result != 0)
-    {
+    if (result != 0) {
         matrix_t tmp = { 0, 0, 0 };
         return tmp;
     }
-    else
-    {
+    else {
         return C;
     }
 }
@@ -173,8 +162,7 @@ matrix_t mult2(matrix_t A, matrix_t B)
 
 void clear(matrix_t mat)
 {
-    for (unsigned i = 0; i < mat.m; ++i)
-    {
+    for (unsigned i = 0; i < mat.m; ++i) {
 #ifdef __CUDACC__
         cudaFree(mat.data[i]);
 #else
@@ -191,10 +179,8 @@ void clear(matrix_t mat)
 
 void print(matrix_t mat)
 {
-    for (unsigned i = 0; i < mat.m; ++i)
-    {
-        for (unsigned j = 0; j < mat.n; ++j)
-        {
+    for (unsigned i = 0; i < mat.m; ++i) {
+        for (unsigned j = 0; j < mat.n; ++j) {
             printf("[%f] ", mat.data[i][j]);
         }
 
