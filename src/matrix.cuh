@@ -7,13 +7,37 @@ struct {
     unsigned n;
 } typedef matrix_t;
 
+double** alloc_grid(unsigned m)
+{
+#ifdef __CUDACC__
+    double** tmp;
+    cudaMallocManaged(&tmp, m * sizeof(double*));
+
+    return tmp;
+#else
+    return (double**)malloc(m * sizeof(double*));
+#endif
+}
+
+double* alloc_row(unsigned n)
+{
+#ifdef __CUDACC__
+    double* tmp;
+    cudaMallocManaged(&tmp, n * sizeof(double));
+
+    return tmp;
+#else
+    return (double*)malloc(n * sizeof(double));
+#endif
+}
+
 matrix_t zeros(unsigned m, unsigned n)
 {
-    matrix_t mat = { (double**)malloc(m * sizeof(double*)), m, n };
+    matrix_t mat = { alloc_grid(m), m, n };
 
     for (unsigned i = 0; i < m; ++i)
     {
-        mat.data[i] = (double*)malloc(n * sizeof(double));
+        mat.data[i] = alloc_row(n);
 
         for (unsigned j = 0; j < n; ++j)
         {
@@ -26,11 +50,11 @@ matrix_t zeros(unsigned m, unsigned n)
 
 matrix_t from_seq(double* seq, unsigned m, unsigned n)
 {
-    matrix_t mat = { (double**)malloc(m * sizeof(double*)), m, n };
+    matrix_t mat = { alloc_grid(m), m, n };
 
     for (unsigned i = 0; i < m; ++i)
     {
-        mat.data[i] = (double*)malloc(n * sizeof(double));
+        mat.data[i] = alloc_row(n);
 
         for (unsigned j = 0; j < n; ++j)
         {
@@ -60,7 +84,11 @@ void compute_cell(matrix_t A, matrix_t B, matrix_t C, unsigned i, unsigned j)
 matrix_t mult(matrix_t A, matrix_t B)
 {
     if (A.n != B.m) {
-        return (matrix_t) { 0, 0, 0 };
+        // workaround for MSVC....
+        matrix_t mat = { 0, 0, 0 };
+        return mat;
+        
+        //return ((matrix_t) { 0, 0, 0 });
     }
 
     matrix_t C = zeros(A.m, B.n);
@@ -84,14 +112,81 @@ matrix_t mult(matrix_t A, matrix_t B)
     return C;
 }
 
+#ifdef __CUDACC__
+__device__
+void find_result_pos(unsigned thread_id, unsigned m, unsigned n, unsigned& i, unsigned& j)
+{
+    j = thread_id % n;
+    i = (thread_id - j) / n;
+}
+
+__global__
+void mult2_kernel(matrix_t A, matrix_t B, matrix_t& C, int& result)
+{
+    if (A.n != B.m) {
+        result = -1;
+
+        return;
+    }
+
+    unsigned i, j;
+    find_result_pos(threadIdx.x, C.m, C.n, i, j);
+
+    double sum = 0.0;
+
+    for (int k = 0; k < A.n; ++k)
+    {
+        sum += A.data[i][k] * B.data[k][j];
+    }
+
+    C.data[i][j] = sum;
+
+    result = 0;
+}
+
+matrix_t mult2(matrix_t A, matrix_t B)
+{
+    if (A.n != B.m)
+    {
+        matrix_t tmp = { 0, 0, 0 };
+        return tmp;
+    }
+
+    matrix_t C = zeros(A.n, B.m);
+
+    int result;
+    mult2_kernel<<<1, 1>>>(A, B, C, result);
+
+    cudaDeviceSynchronize();
+
+    if (result != 0)
+    {
+        matrix_t tmp = { 0, 0, 0 };
+        return tmp;
+    }
+    else
+    {
+        return C;
+    }
+}
+#endif
+
 void clear(matrix_t mat)
 {
     for (unsigned i = 0; i < mat.m; ++i)
     {
+#ifdef __CUDACC__
+        cudaFree(mat.data[i]);
+#else
         free(mat.data[i]);
+#endif
     }
 
+#ifdef __CUDACC__
+    cudaFree(mat.data);
+#else
     free(mat.data);
+#endif
 }
 
 void print(matrix_t mat)

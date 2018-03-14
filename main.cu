@@ -20,9 +20,18 @@ int main()
 
     print(C);
 
+#ifdef __CUDACC__
+    matrix_t D = mult2(A, B);
+
+    print(D);
+#endif
+
     clear(A);
     clear(B);
     clear(C);
+#ifdef __CUDACC__
+    clear(D);
+#endif
 
     return 0;
 }
