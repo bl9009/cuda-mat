@@ -1,73 +1,114 @@
-#include <cstddef>
-#include <iostream>
-
-#include <exception>
-#include <vector>
-
 #include <stdio.h>
+#include <stdlib.h>
 
-namespace cudamat
+struct {
+    double** data;
+    unsigned m;
+    unsigned n;
+} typedef matrix_t;
+
+matrix_t zeros(unsigned m, unsigned n)
 {
-    double** zeros(unsigned m, unsigned n)
+    matrix_t mat = { (double**)malloc(m * sizeof(double*)), m, n };
+
+    for (unsigned i = 0; i < m; ++i)
     {
-        double** matrix = (double**) malloc(m * sizeof(double*));
+        mat.data[i] = (double*)malloc(n * sizeof(double));
 
-        for (unsigned i = 0; i < m; ++i)
+        for (unsigned j = 0; j < n; ++j)
         {
-            matrix[i] = (double*)malloc(n * sizeof(double));
-
-            for (unsigned j = 0; j < n; ++j)
-            {
-                matrix[i][j] = 0.0;
-            }
+            mat.data[i][j] = 0.0;
         }
-
-        return matrix;
     }
 
-    double** mult(double* A, unsigned m, unsigned n, double* B, unsigned p, unsigned q)
+    return mat;
+}
+
+matrix_t from_seq(double* seq, unsigned m, unsigned n)
+{
+    matrix_t mat = { (double**)malloc(m * sizeof(double*)), m, n };
+
+    for (unsigned i = 0; i < m; ++i)
     {
-        if (n != q) {
-            return 0;
-        }
+        mat.data[i] = (double*)malloc(n * sizeof(double));
 
-        double** C = zeros(m, p);
-
-        for (unsigned i = 0; i < n; ++i)
+        for (unsigned j = 0; j < n; ++j)
         {
-            for (unsigned j = 0; j < p; ++j)
-            {
-                double sum = 0.0;
-
-                for (int k = 0; k < m; ++k)
-                {
-                     sum += A[i][k] * B[k][j];
-                }
-
-                C[i][j] = sum;
-
-                //C[i][j] = computeCell(A, B, i, j, m);
-                //computeCell << <1, 1 >> >(A, B, i, j, m, C);
-            }
+            mat.data[i][j] = *seq;
+            ++seq;
         }
-
-        return C;
     }
 
-    void print(double** matrix, unsigned m, unsigned n)
-    {
-        for (unsigned i = 0; i < m; ++i)
-        {
-            for (unsigned j = 0; j < n; ++j)
-            {
-                printf("[%d] ", matrix[i][j]);
-            }
+    return mat;
+}
 
-            printf("\n");
+#ifdef __CUDACC__
+__global__
+#endif
+void compute_cell(matrix_t A, matrix_t B, matrix_t C, unsigned i, unsigned j)
+{
+    double sum = 0.0;
+
+    for (int k = 0; k < A.n; ++k)
+    {
+        sum += A.data[i][k] * B.data[k][j];
+    }
+
+    C.data[i][j] = sum;
+}
+
+matrix_t mult(matrix_t A, matrix_t B)
+{
+    if (A.n != B.m) {
+        return (matrix_t) { 0, 0, 0 };
+    }
+
+    matrix_t C = zeros(A.m, B.n);
+
+    for (unsigned i = 0; i < C.m; ++i)
+    {
+        for (unsigned j = 0; j < C.n; ++j)
+        {
+#ifdef __CUDACC__
+            compute_cell<<<1,1>>>(A, B, C, i, j);
+#else
+            compute_cell(A, B, C, i, j);
+#endif
         }
+    }
+
+#ifdef __CUDACC__
+    cudaDeviceSynchronize();
+#endif
+
+    return C;
+}
+
+void clear(matrix_t mat)
+{
+    for (unsigned i = 0; i < mat.m; ++i)
+    {
+        free(mat.data[i]);
+    }
+
+    free(mat.data);
+}
+
+void print(matrix_t mat)
+{
+    for (unsigned i = 0; i < mat.m; ++i)
+    {
+        for (unsigned j = 0; j < mat.n; ++j)
+        {
+            printf("[%f] ", mat.data[i][j]);
+        }
+
+        printf("\n");
     }
 }
 
+
+/*
 namespace cudamat
 {
     typedef std::vector<double> MatrixRow;
@@ -251,3 +292,6 @@ namespace cudamat
         C[i][j] = result;
     }
 }
+
+
+*/
