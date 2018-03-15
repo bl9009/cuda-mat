@@ -114,26 +114,31 @@ void find_result_pos(unsigned thread_id, unsigned m, unsigned n, unsigned& i, un
 }
 
 __global__
-void mult2_kernel(matrix_t A, matrix_t B, matrix_t& C, int& result)
+//void mult2_kernel(matrix_t A, matrix_t B, matrix_t& C, int* result)
+void mult2_kernel(matrix_t A, matrix_t B, matrix_t& C)
 {
     if (A.n != B.m) {
-        result = -1;
+        //*result = -1;
+        printf("exit...");
 
         return;
     }
 
-    unsigned i, j;
-    find_result_pos(threadIdx.x, C.m, C.n, i, j);
-
+    unsigned i = threadIdx.x;
+    unsigned j = threadIdx.y;
+    //find_result_pos(threadIdx.x, C.m, C.n, i, j);
+    
     double sum = 0.0;
 
     for (int k = 0; k < A.n; ++k) {
         sum += A.data[i][k] * B.data[k][j];
     }
 
+    printf("thread: %i:%i, result: %f\n", threadIdx.x, threadIdx.y, sum);
+
     C.data[i][j] = sum;
 
-    result = 0;
+    //*result = 0;
 }
 
 matrix_t mult2(matrix_t A, matrix_t B)
@@ -143,20 +148,30 @@ matrix_t mult2(matrix_t A, matrix_t B)
         return tmp;
     }
 
-    matrix_t C = zeros(A.n, B.m);
+    matrix_t C = zeros(A.m, B.n);
 
-    int result;
-    mult2_kernel<<<1, 1>>>(A, B, C, result);
+    int* result;
+    cudaMallocManaged(&result, sizeof(int));
+
+    dim3 threadsPerBlock(A.m, B.n);
+    mult2_kernel<<<1, threadsPerBlock>>>(A, B, C);
+    //mult2_kernel<<<1, 10>>>(A, B, C, result);
 
     cudaDeviceSynchronize();
 
-    if (result != 0) {
-        matrix_t tmp = { 0, 0, 0 };
-        return tmp;
-    }
-    else {
+    int error = *result;
+
+    cudaFree(result);
+
+    //if (error != 0) {
+    //    printf("no!!!");
+    //    matrix_t tmp = { 0, 0, 0 };
+    //    return tmp;
+    //}
+    //else {
+        printf("ok...");
         return C;
-    }
+    //}
 }
 #endif
 
@@ -164,7 +179,7 @@ void clear(matrix_t mat)
 {
     for (unsigned i = 0; i < mat.m; ++i) {
 #ifdef __CUDACC__
-        cudaFree(mat.data[i]);
+        cudaFree(mat.data++);
 #else
         free(mat.data[i]);
 #endif
@@ -181,10 +196,12 @@ void print(matrix_t mat)
 {
     for (unsigned i = 0; i < mat.m; ++i) {
         for (unsigned j = 0; j < mat.n; ++j) {
-            printf("[%f] ", mat.data[i][j]);
+            printf("[%f] ", *((*mat.data)++));
         }
 
         printf("\n");
+
+        ++mat.data;
     }
 }
 

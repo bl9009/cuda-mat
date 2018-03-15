@@ -22,15 +22,16 @@ int main()
 
 #ifdef __CUDACC__
     matrix_t D = mult2(A, B);
-
     print(D);
 #endif
 
     clear(A);
     clear(B);
     clear(C);
+    printf("here12");
 #ifdef __CUDACC__
     clear(D);
+    printf("here13");
 #endif
 
     return 0;
