@@ -1,0 +1,3 @@
+build/*
+dist/build/lib/*
+python/test/__pycache__
