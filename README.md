@@ -9,16 +9,15 @@ Allows off-loading heavy matrix computations like matrix multiplication to the G
 * CUDA-capable GPU (see https://developer.nvidia.com/cuda-gpus)
 * Python 3.6
 
+### Dependencies
+* CUDA 9.1
+* CMake 3.9
+
 ### Build
 * Generate build files: `cmake -A x64 -Bbuild`
 * Build: `cmake --build build --target install --config Release`
 * Install Python module: `cd python && python setup.py install`
 * Run tests: `cd python && python -m unittest discover`
-
-### Dependencies
-* CUDA-capable GPU
-* CUDA 9.1
-* CMake 3.9
 
 ### Example
 ```python
