@@ -49,17 +49,30 @@ __device__ double* cell_device(d_matrix_t A, size_t row, size_t col)
     return &r[col];
 }
 
-double* cell(matrix_t A, size_t row, size_t col)
+error_t cell(matrix_t A, size_t row, size_t col, double** value)
 {
-    double* r = (double*)((char*)A.data + row * A.pitch);
-    return &r[col];
+    if (row >= A.rows || col >= A.cols) {
+        return OUT_OF_BOUNDS;
+    }
+
+    double* r = (double*)((char*) A.data + row * A.pitch);
+    *value = &r[col];
+
+    return OK;
 }
 
 error_t from_seq(double* seq, matrix_t* A)
 {
     for (int i = 0; i < A->rows; ++i) {
         for (int j = 0; j < A->cols; ++j) {
-            *cell(*A, i, j) = seq[i * A->cols + j];
+            double* tmp = NULL;
+
+            if (cell(*A, i, j, &tmp) == OUT_OF_BOUNDS) {
+                return OUT_OF_BOUNDS;
+            }
+
+            *tmp = seq[i * A->cols + j];
+            //*cell(*A, i, j) = seq[i * A->cols + j];
         }
     }
 
@@ -150,7 +163,15 @@ void print(matrix_t mat)
 {
     for (int i = 0; i < mat.rows; ++i) {
         for (int j = 0; j < mat.cols; ++j) {
-            printf("[%f] ", *cell(mat, i, j));
+            double* tmp = NULL;
+
+            if (cell(mat, i, j, &tmp) == OUT_OF_BOUNDS) {
+                printf("index out of bounds!");
+
+                return;
+            }
+
+            printf("[%f] ", *tmp);
         }
 
         printf("\n");

@@ -46,7 +46,7 @@ struct {
  *     - OK: Operation returned as expected.
  *     - SHAPE_MISSMATCH: The shapes of involved matrices do not match.
  */
-enum { OK, SHAPE_MISMATCH } typedef error_t;
+enum { OK, SHAPE_MISMATCH, OUT_OF_BOUNDS } typedef error_t;
 
 /*---------------------------------------------------*/
 /*              FUNCTION DECLARATIONS                */
@@ -71,7 +71,7 @@ matrix_t zeros(size_t rows, size_t cols);
  *
  * @return Pointer to the specified double value.
  */
-double* cell(matrix_t A, size_t row, size_t col);
+error_t cell(matrix_t A, size_t row, size_t col, double** value);
 
 /*
  * Loads values from a sequence into a given matrix.

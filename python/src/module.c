@@ -37,7 +37,13 @@ static PyObject* pycudamat_from_2d(PyObject* self, PyObject* args)
                 for (int j = 0; j < n; ++j) {
                     PyObject* value = PyList_GetItem(row, j);
 
-                    double* c = cell(mat->matrix, i, j);
+                    double* c = NULL;
+
+                    if (cell(mat->matrix, i, j, &c) == OUT_OF_BOUNDS) {
+                        PyErr_SetString(PyExc_IndexError, "Index out of bounds!");
+                        
+                        return NULL;
+                    }
 
                     if (PyFloat_Check(value)) {
                         *c = PyFloat_AsDouble(value);

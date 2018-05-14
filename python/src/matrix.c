@@ -77,7 +77,13 @@ static PyObject* Matrix_repr(PyObject* self)
         for (size_t j = 0; j < cols; ++j) {
             char tmp[64];
 
-            sprintf(tmp, "%.3f ", *cell(mat->matrix, i, j));
+            double* val = NULL;
+
+            if (cell(mat->matrix, i, j, &val) == OUT_OF_BOUNDS) {
+                return NULL;
+            }
+
+            sprintf(tmp, "%.3f ", *val);
 
             strcat(repr, tmp);
         }
@@ -107,7 +113,15 @@ static PyObject* Matrix_cell(MatrixObject* self, PyObject* args, PyObject* kwds)
         return NULL;
     }
 
-    return PyFloat_FromDouble(*cell(self->matrix, row, col));
+    double* value = NULL;
+
+    if (cell(self->matrix, row, col, &value) == OUT_OF_BOUNDS) {
+        PyErr_SetString(PyExc_IndexError, "Index out of bounds!");
+        
+        return NULL;
+    }
+
+    return PyFloat_FromDouble(*value);
 }
 
 static PyObject* Matrix_shape(MatrixObject* self, PyObject* args, PyObject* kwds)

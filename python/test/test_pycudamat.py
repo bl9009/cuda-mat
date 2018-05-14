@@ -29,6 +29,14 @@ class TestMatrix(unittest.TestCase):
             for j in range(cols):
                 self.assertEqual(m.cell(i, j), 0.0)
 
+    def test_cell(self):
+        l = [[1, 2, 3], [4, 5, 6]]
+
+        m = pcm.from_2d(l)
+
+        self.assertEqual(m.cell(1, 1), float(l[1][1]))
+        self.assertRaises(IndexError, m.cell, 3, 0)
+
     def test_shape(self):
         rows = 10
         cols = 12
