@@ -48,6 +48,7 @@ class TestMatrix(unittest.TestCase):
     def test_mult(self):
         A = pcm.from_2d([[1, 2, 3], [4, 5, 6]])
         B = pcm.from_2d([[1, 2], [3, 4], [5, 6]])
+        E = pcm.from_2d([[0]])
 
         C = pcm.from_2d([[22, 28], [49, 64]])
         C_test = A.mult(B)
@@ -57,6 +58,8 @@ class TestMatrix(unittest.TestCase):
         for i in range(2):
             for j in range(2):
                 self.assertEqual(C.cell(i, j), C_test.cell(i, j))
+
+        self.assertRaises(ValueError, A.mult, E)
 
 #if __name__ == '__main__':
 #    test_init()

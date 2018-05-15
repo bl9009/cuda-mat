@@ -41,7 +41,7 @@ static PyObject* pycudamat_from_2d(PyObject* self, PyObject* args)
 
                     if (cell(mat->matrix, i, j, &c) == OUT_OF_BOUNDS) {
                         PyErr_SetString(PyExc_IndexError, "Index out of bounds!");
-                        
+
                         return NULL;
                     }
 

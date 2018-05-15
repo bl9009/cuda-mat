@@ -107,6 +107,15 @@ error_t mult(matrix_t A, matrix_t B, matrix_t* C)
 {
     h_matrix_t h_C = *C;
 
+    size_t res_rows = A.rows;
+    size_t res_cols = B.cols;
+
+    if (res_rows != res_cols ||
+        res_rows != h_C.rows ||
+        res_cols != h_C.cols) {
+        return SHAPE_MISMATCH;
+        }
+
     d_matrix_t d_A = load_device(A);
     d_matrix_t d_B = load_device(B);
     d_matrix_t d_C = load_device(h_C);

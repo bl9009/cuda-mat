@@ -117,7 +117,7 @@ static PyObject* Matrix_cell(MatrixObject* self, PyObject* args, PyObject* kwds)
 
     if (cell(self->matrix, row, col, &value) == OUT_OF_BOUNDS) {
         PyErr_SetString(PyExc_IndexError, "Index out of bounds!");
-        
+
         return NULL;
     }
 
@@ -147,7 +147,11 @@ static PyObject* Matrix_mult(MatrixObject* self, PyObject* args, PyObject* kwds)
 
     C->matrix = zeros(m, n);
 
-    mult(A->matrix, B->matrix, &(C->matrix));
+    if (mult(A->matrix, B->matrix, &(C->matrix)) == SHAPE_MISMATCH) {
+        PyErr_SetString(PyExc_ValueError, "Shapes of matrices do not match!");
+
+        return NULL;
+    }
 
     return (PyObject*) C;
 }

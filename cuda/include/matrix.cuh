@@ -68,8 +68,9 @@ matrix_t zeros(size_t rows, size_t cols);
  * @param A: The matrix.
  * @param row: Row location of the cell.
  * @param col: Column location of the cell.
+ * @param value: Pointer to the value for call-by-reference.
  *
- * @return Pointer to the specified double value.
+ * @return OUT_OF_BOUNDS if index is out of bounds, OK otherwise.
  */
 error_t cell(matrix_t A, size_t row, size_t col, double** value);
 
@@ -105,7 +106,8 @@ shape_t mult_result_shape(matrix_t A, matrix_t B);
  * @param B: The multiplicand.
  * @param C: Result of the matrix product AB.
  *
- * @return OK if operation finished as expected.
+ * @return OK if operation finished as expected, SHAPE_MISMATCH if shape of
+ *   both matrices do mismatch.
  */
 error_t mult(matrix_t A, matrix_t B, matrix_t* C);
 
