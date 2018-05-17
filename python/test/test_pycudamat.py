@@ -37,6 +37,34 @@ class TestMatrix(unittest.TestCase):
         self.assertEqual(m.cell(1, 1), float(l[1][1]))
         self.assertRaises(IndexError, m.cell, 3, 0)
 
+    def test_set(self):
+        l = [[1, 2, 3], [4, 5, 6]]
+
+        m = pcm.from_2d(l)
+
+        m.set(1, 1, 42)
+
+        self.assertEqual(m.cell(1, 1), 42)
+
+    def test_get_item(self):
+        l = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+
+        m = pcm.from_2d(l)
+
+        for i, row in enumerate(l):
+            for j, cell in enumerate(row):
+                self.assertEqual(m[i][j], l[i][j])
+                self.assertEqual(m[i][j], cell(i, j))
+
+    def test_set_item(self):
+        l = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+
+        m = pcm.from_2d(l)
+
+        m[1][2] = 42
+
+        self.assertEqual(m.cell(1, 2), 42)
+
     def test_shape(self):
         rows = 10
         cols = 12
@@ -61,5 +89,15 @@ class TestMatrix(unittest.TestCase):
 
         self.assertRaises(ValueError, A.mult, E)
 
+    def test_transpose(self):
+        A = pcm.from_2d([[1, 2, 3], [4, 5, 6]])
+        A_t = pcm.from_2d([[1, 4], [2, 5], [3, 6]])
+
+        A_t_test = A.transpose()
+
+        for i in range(3):
+            for j in range(2):
+                self.assertEqual(A_t_test.shape(), A_t.shape())
+                self.assertEqual(A_t_test.cell(i, j), A_t.cell(i, j))
 #if __name__ == '__main__':
 #    test_init()
