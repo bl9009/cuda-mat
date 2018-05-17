@@ -17,11 +17,13 @@ static PyObject* Matrix_str(PyObject* self);
 static PyObject* Matrix_cell(MatrixObject* self, PyObject* args, PyObject *kwds);
 static PyObject* Matrix_shape(MatrixObject* self, PyObject* args, PyObject *kwds);
 static PyObject* Matrix_mult(MatrixObject* self, PyObject* args, PyObject* kwds);
+static PyObject* Matrix_transpose(MatrixObject* self, PyObject* args, PyObject* kwds);
 
 static PyMethodDef Matrix_methods[] = {
     { "cell", (PyCFunction) Matrix_cell, METH_VARARGS, "Returns cell specified by row and column." },
     { "shape", (PyCFunction) Matrix_shape, METH_NOARGS, "Retunrs shape of the matrix." },
     { "mult", (PyCFunction) Matrix_mult, METH_VARARGS, "Computes matrix product AB of matrices A and B." },
+    { "transpose", (PyCFunction) Matrix_transpose, METH_NOARGS, "Computes transposition of matrix A." },
     { NULL }
 };
 
@@ -154,4 +156,20 @@ static PyObject* Matrix_mult(MatrixObject* self, PyObject* args, PyObject* kwds)
     }
 
     return (PyObject*) C;
+}
+
+static PyObject* Matrix_transpose(MatrixObject* self, PyObject* args, PyObject* kwds)
+{
+    size_t m, n;
+
+    m = self->matrix.cols;
+    n = self->matrix.rows;
+
+    MatrixObject* A_t = (MatrixObject*) PyObject_CallObject((PyObject*) &MatrixType, NULL);
+
+    A_t->matrix = zeros(m, n);
+
+    transpose(self->matrix, &A_t->matrix);
+
+    return (PyObject*) A_t;
 }
