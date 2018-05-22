@@ -1,3 +1,4 @@
 build/*
 dist/build/lib/*
+dist/*.py
 python/test/__pycache__
