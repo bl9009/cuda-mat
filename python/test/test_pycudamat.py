@@ -46,6 +46,19 @@ class TestMatrix(unittest.TestCase):
 
         self.assertEqual(m.cell(1, 1), 42)
 
+    def test_equals(self):
+        l = [[1, 2, 3], [4, 5, 6]]
+
+        A = pcm.from_2d(l)
+        B = pcm.from_2d(l)
+        C = pcm.zeros(3, 3)
+        D = pcm.from_2d([[1, 2, 3], [4, 5, 6]])
+
+        self.assertTrue(A.equals(B))
+        self.assertTrue(not A.equals(C) and not B.equals(C))
+        self.assertTrue(not A.equals(D) and not B.equals(D))
+        sefl.assertTrue(not A.equals(1))
+
     def test_get_item(self):
         l = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 
@@ -64,6 +77,15 @@ class TestMatrix(unittest.TestCase):
         m[1][2] = 42
 
         self.assertEqual(m.cell(1, 2), 42)
+
+    def test_iterable(self):
+        l = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+
+        A = pcm.from_2d(l)
+
+        for row_A, row_l in zip(A, l):
+            for cell_A, cell_l in zip(row_A, row_l):
+                self.assertEqual(cell_A, cell_l)
 
     def test_shape(self):
         rows = 10
