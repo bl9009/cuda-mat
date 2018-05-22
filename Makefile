@@ -6,6 +6,7 @@ regen:
 	@cd build && cmake --build . --target install --config Release
 
 install:
+	@cd dist && @copy ..\python\src\pycudamat.py .
 	@cd dist && python setup.py install
 
 test:
