@@ -13,6 +13,8 @@ static PyObject* Matrix_new(PyTypeObject* type, PyObject* args, PyObject *kwds);
 static int Matrix_init(MatrixObject* self, PyObject* args, PyObject *kwds);
 static PyObject* Matrix_repr(PyObject* self);
 static PyObject* Matrix_str(PyObject* self);
+//static PyObject* Matrix_richcompare(MatrixObject* self, PyObject* args, PyObject* kwds);
+static PyObject* Matrix_richcompare(PyObject* self, PyObject* other, int op);
 
 static PyObject* Matrix_cell(MatrixObject* self, PyObject* args, PyObject *kwds);
 static PyObject* Matrix_shape(MatrixObject* self, PyObject* args, PyObject *kwds);
@@ -39,7 +41,8 @@ static PyTypeObject MatrixType = {
     .tp_dealloc = (destructor) Matrix_dealloc,
     .tp_methods = Matrix_methods,
     .tp_repr = Matrix_repr,
-    .tp_str = Matrix_str
+    .tp_str = Matrix_str,
+    .tp_richcompare = (richcmpfunc) Matrix_richcompare
 };
 
 static void Matrix_dealloc(MatrixObject* self)
@@ -105,6 +108,52 @@ static PyObject* Matrix_repr(PyObject* self)
 static PyObject* Matrix_str(PyObject* self)
 {
     return NULL;
+}
+
+static PyObject* Matrix_richcompare(PyObject* self, PyObject* other, int op)
+{
+    PyObject* result = NULL;
+
+    if (!PyObject_TypeCheck(other, &MatrixType)) {
+        result = Py_NotImplemented;
+    }
+    else {
+        switch (op) {
+            case Py_EQ:
+            case Py_NE:
+                matrix_t A = ((MatrixObject*) self)->matrix;
+                matrix_t B = ((MatrixObject*) other)->matrix;
+
+                result = (op == Py_EQ) ? Py_True : Py_False;
+
+                if (A.rows != B.rows || A.cols != B.cols) {
+                    result = (op == Py_EQ) ? Py_False : Py_True;
+                }
+
+                for (int i = 0; i < A.rows; ++i) {
+                    for (int j = 0; j < A.cols; ++j) {
+                        double* val_A;
+                        double* val_B;
+
+                        cell(A, i, j, &val_A);
+                        cell(B, i, j, &val_B);
+
+                        if (*val_A != *val_B) {
+                            result = (op == Py_EQ) ? Py_False : Py_True;
+                        }
+                    }
+                }
+
+                break;
+
+            default:
+                result = Py_NotImplemented;
+        }
+    }
+
+    Py_XINCREF(result);
+
+    return result;
 }
 
 static PyObject* Matrix_cell(MatrixObject* self, PyObject* args, PyObject* kwds)

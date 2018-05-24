@@ -52,12 +52,13 @@ class TestMatrix(unittest.TestCase):
         A = pcm.from_2d(l)
         B = pcm.from_2d(l)
         C = pcm.zeros(3, 3)
-        D = pcm.from_2d([[1, 2, 3], [4, 5, 6]])
+        D = pcm.from_2d([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-        self.assertTrue(A.equals(B))
-        self.assertTrue(not A.equals(C) and not B.equals(C))
-        self.assertTrue(not A.equals(D) and not B.equals(D))
-        sefl.assertTrue(not A.equals(1))
+        self.assertTrue(A == B)
+        self.assertTrue(A != C and B != C)
+        self.assertTrue(A != D and B != D)
+        self.assertTrue(C != D)
+        self.assertTrue(A != 1)
 
     def test_get_item(self):
         l = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
