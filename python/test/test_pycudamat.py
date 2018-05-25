@@ -68,7 +68,7 @@ class TestMatrix(unittest.TestCase):
         for i, row in enumerate(l):
             for j, cell in enumerate(row):
                 self.assertEqual(m[i][j], l[i][j])
-                self.assertEqual(m[i][j], cell(i, j))
+                self.assertEqual(m[i][j], m.cell(i, j))
 
     def test_setitem(self):
         l = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
