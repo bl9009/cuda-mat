@@ -16,6 +16,9 @@ static PyObject* Matrix_str(PyObject* self);
 //static PyObject* Matrix_richcompare(MatrixObject* self, PyObject* args, PyObject* kwds);
 static PyObject* Matrix_richcompare(PyObject* self, PyObject* other, int op);
 
+static PyObject* Matrix_getitem(PyObject* self, Py_ssize_t i);
+static int Matrix_setitem(PyObject* self, Py_ssize_t i, PyObject* value);
+
 static PyObject* Matrix_cell(MatrixObject* self, PyObject* args, PyObject *kwds);
 static PyObject* Matrix_shape(MatrixObject* self, PyObject* args, PyObject *kwds);
 static PyObject* Matrix_mult(MatrixObject* self, PyObject* args, PyObject* kwds);
@@ -29,9 +32,14 @@ static PyMethodDef Matrix_methods[] = {
     { NULL }
 };
 
+static PySequenceMethods seq_methods = {
+    .sq_item = Matrix_getitem,
+    .sq_ass_item = Matrix_setitem
+};
+
 static PyTypeObject MatrixType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "cudamat.Matrix",
+    .tp_name = "pycudamat.Matrix",
     .tp_doc = "Matrix object",
     .tp_basicsize = sizeof(MatrixObject),
     .tp_itemsize = 0,
@@ -42,7 +50,8 @@ static PyTypeObject MatrixType = {
     .tp_methods = Matrix_methods,
     .tp_repr = Matrix_repr,
     .tp_str = Matrix_str,
-    .tp_richcompare = (richcmpfunc) Matrix_richcompare
+    .tp_richcompare = (richcmpfunc) Matrix_richcompare,
+    .tp_as_sequence = &seq_methods
 };
 
 static void Matrix_dealloc(MatrixObject* self)
@@ -154,6 +163,57 @@ static PyObject* Matrix_richcompare(PyObject* self, PyObject* other, int op)
     Py_XINCREF(result);
 
     return result;
+}
+
+static PyObject* Matrix_getitem(PyObject* self, Py_ssize_t i)
+{
+    MatrixObject* A = (MatrixObject*) self;
+
+
+    if (A->matrix.rows > 1) {
+        if ((size_t)i >= A->matrix.rows) {
+            PyErr_SetString(PyExc_IndexError, "Index out of bounds!");
+
+            return NULL;
+        }
+
+        MatrixObject* row = (MatrixObject*) PyObject_CallObject((PyObject*) &MatrixType, NULL);
+
+        size_t n = A->matrix.cols;
+
+        row->matrix = zeros(1, n);
+
+        for (int j = 0; j < n; ++j) {
+            double* src;
+            double* dst;
+
+            cell(A->matrix, i, j, &src);
+            cell(row->matrix, 0, j, &dst);
+
+            *dst = *src;
+        }
+
+        return (PyObject*) row;
+    }
+    else {
+        if ((size_t)i >= A->matrix.cols) {
+            PyErr_SetString(PyExc_IndexError, "Index out of bounds!");
+
+            return NULL;
+        }
+
+        double* res;
+
+        cell(A->matrix, 0, i, &res);
+
+        return PyFloat_FromDouble(*res);
+    }
+
+}
+
+static int Matrix_setitem(PyObject* self, Py_ssize_t i, PyObject* value)
+{
+    return 0;
 }
 
 static PyObject* Matrix_cell(MatrixObject* self, PyObject* args, PyObject* kwds)
