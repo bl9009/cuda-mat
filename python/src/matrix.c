@@ -8,47 +8,49 @@ typedef struct {
     matrix_t matrix;
 } MatrixObject;
 
-static void Matrix_dealloc(MatrixObject* self);
+static void      Matrix_dealloc(MatrixObject* self);
 static PyObject* Matrix_new(PyTypeObject* type, PyObject* args, PyObject *kwds);
-static int Matrix_init(MatrixObject* self, PyObject* args, PyObject *kwds);
+static int       Matrix_init(MatrixObject* self, PyObject* args, PyObject *kwds);
 static PyObject* Matrix_repr(PyObject* self);
 static PyObject* Matrix_str(PyObject* self);
 static PyObject* Matrix_richcompare(MatrixObject* self, MatrixObject* other, int op);
 
 static PyObject* Matrix_getitem(MatrixObject* self, Py_ssize_t i);
-static int Matrix_setitem(MatrixObject* self, Py_ssize_t i, PyObject* value);
+static int       Matrix_setitem(MatrixObject* self, Py_ssize_t i, PyObject* value);
 
 static PyObject* Matrix_cell(MatrixObject* self, PyObject* args, PyObject *kwds);
+static PyObject* Matrix_set(MatrixObject* self, PyObject* args, PyObject *kwds);
 static PyObject* Matrix_shape(MatrixObject* self, PyObject* args, PyObject *kwds);
 static PyObject* Matrix_mult(MatrixObject* self, PyObject* args, PyObject* kwds);
 static PyObject* Matrix_transpose(MatrixObject* self, PyObject* args, PyObject* kwds);
 
 static PyMethodDef Matrix_methods[] = {
-    { "cell", (PyCFunction) Matrix_cell, METH_VARARGS, "Returns cell specified by row and column." },
-    { "shape", (PyCFunction) Matrix_shape, METH_NOARGS, "Retunrs shape of the matrix." },
-    { "mult", (PyCFunction) Matrix_mult, METH_VARARGS, "Computes matrix product AB of matrices A and B." },
-    { "transpose", (PyCFunction) Matrix_transpose, METH_NOARGS, "Computes transposition of matrix A." },
+    { "cell"     , (PyCFunction) Matrix_cell     , METH_VARARGS, "Returns cell specified by row and column." },
+    { "set"      , (PyCFunction) Matrix_set      , METH_VARARGS, "Sets cell specified by row and column to specified value." },
+    { "shape"    , (PyCFunction) Matrix_shape    , METH_NOARGS , "Retunrs shape of the matrix." },
+    { "mult"     , (PyCFunction) Matrix_mult     , METH_VARARGS, "Computes matrix product AB of matrices A and B." },
+    { "transpose", (PyCFunction) Matrix_transpose, METH_NOARGS , "Computes transposition of matrix A." },
     { NULL }
 };
 
 static PySequenceMethods seq_methods = {
-    .sq_item = (ssizeargfunc) Matrix_getitem,
+    .sq_item     = (ssizeargfunc) Matrix_getitem,
     .sq_ass_item = (ssizeobjargproc) Matrix_setitem
 };
 
 static PyTypeObject MatrixType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "pycudamat.Matrix",
-    .tp_doc = "Matrix object",
-    .tp_basicsize = sizeof(MatrixObject),
-    .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_new = Matrix_new,
-    .tp_init = (initproc) Matrix_init,
-    .tp_dealloc = (destructor) Matrix_dealloc,
-    .tp_methods = Matrix_methods,
-    .tp_repr = Matrix_repr,
-    .tp_str = Matrix_str,
+    .tp_name        = "pycudamat.Matrix",
+    .tp_doc         = "Matrix object",
+    .tp_basicsize   = sizeof(MatrixObject),
+    .tp_itemsize    = 0,
+    .tp_flags       = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_new         = Matrix_new,
+    .tp_init        = (initproc) Matrix_init,
+    .tp_dealloc     = (destructor) Matrix_dealloc,
+    .tp_methods     = Matrix_methods,
+    .tp_repr        = Matrix_repr,
+    .tp_str         = Matrix_str,
     .tp_richcompare = (richcmpfunc) Matrix_richcompare,
     .tp_as_sequence = &seq_methods
 };
@@ -209,7 +211,18 @@ static PyObject* Matrix_getitem(MatrixObject* self, Py_ssize_t i)
 
 static int Matrix_setitem(MatrixObject* self, Py_ssize_t i, PyObject* value)
 {
-    return 0;
+    if (self->matrix.rows > 1) {
+        return 0;
+    }
+    else {
+        double* dst;
+
+        cell(self->matrix, 0, i, &dst);
+
+        *dst = PyFloat_AsDouble(value);
+
+        return 0;
+    }
 }
 
 static PyObject* Matrix_cell(MatrixObject* self, PyObject* args, PyObject* kwds)
@@ -229,6 +242,28 @@ static PyObject* Matrix_cell(MatrixObject* self, PyObject* args, PyObject* kwds)
     }
 
     return PyFloat_FromDouble(*value);
+}
+
+static PyObject* Matrix_set(MatrixObject* self, PyObject* args, PyObject* kwds)
+{
+    unsigned int row, col;
+    double new_val;
+
+    if (!PyArg_ParseTuple(args, "IId", &row, &col, &new_val)) {
+        return NULL;
+    }
+
+    double* val = NULL;
+
+    if (cell(self->matrix, row, col, &val) == OUT_OF_BOUNDS) {
+        PyErr_SetString(PyExc_IndexError, "Index out of bounds!");
+
+        return NULL;
+    }
+
+    *val = new_val;
+
+    return Py_BuildValue("");
 }
 
 static PyObject* Matrix_shape(MatrixObject* self, PyObject* args, PyObject* kwds)
